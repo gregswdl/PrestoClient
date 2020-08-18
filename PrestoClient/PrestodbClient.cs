@@ -62,7 +62,7 @@ namespace BAMCIS.PrestoClient
         /// <summary>
         /// Initializes HTTP Handler and Client
         /// </summary>
-        private void InitializeHttpClients()
+        private void InitializeHttpClients(Func<HttpClientHandler, HttpClient> httpClientFactory)
         {
             this.NormalHandler = new HttpClientHandler()
             {
@@ -94,10 +94,10 @@ namespace BAMCIS.PrestoClient
                 }
             };
 
-            this.NormalClient = new HttpClient(this.NormalHandler);
-            this.IgnoreSslErrorClient = new HttpClient(this.IgnoreSslErrorHandler);
+            this.NormalClient = httpClientFactory(this.NormalHandler);
+            this.IgnoreSslErrorClient = httpClientFactory(this.IgnoreSslErrorHandler);
         }
-
+        
         #endregion
 
         #region Public Properties
@@ -108,19 +108,16 @@ namespace BAMCIS.PrestoClient
 
         #region Constructor
 
-        public PrestodbClient()
+        public PrestodbClient(Func<HttpClientHandler, HttpClient> httpClientFactory = null) : this(new PrestoClientSessionConfig(), httpClientFactory)
         {
             // Initialize with defaults
-            this.Configuration = new PrestoClientSessionConfig();
-
-            this.InitializeHttpClients();
         }
 
-        public PrestodbClient(PrestoClientSessionConfig config)
+        public PrestodbClient(PrestoClientSessionConfig config, Func<HttpClientHandler, HttpClient> httpClientFactory = null)
         {
             this.Configuration = config ?? throw new ArgumentNullException("config", "The presto client configuration cannot be null.");
 
-            this.InitializeHttpClients();
+            this.InitializeHttpClients(httpClientFactory ?? (handler => new HttpClient(handler)));
         }
 
         #endregion
